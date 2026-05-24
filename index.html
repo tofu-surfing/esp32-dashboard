@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 智慧座艙健康看板 v2.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.0/firebase-database-compat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans">
+
+    <header class="bg-indigo-600 text-white shadow-md p-4 mb-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">IoT 工作座艙健康 Dashboard</h1>
+            <div class="flex items-center space-x-4">
+                <div class="text-slate-800 space-x-2 flex items-center bg-white p-2 rounded-lg shadow-sm text-sm">
+                    <label class="font-bold text-slate-600">選擇日期：</label>
+                    <input type="date" id="date-picker" class="border rounded p-1 font-semibold" onchange="onDateOrViewChange()">
+                    <select id="view-mode" class="border rounded p-1 font-semibold" onchange="onDateOrViewChange()">
+                        <option value="day">單日完整時序</option>
+                        <option value="week">本週趨勢 (2小時為計)</option>
+                    </select>
+                </div>
+                <div id="connection-status" class="bg-emerald-500 px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
+                    即時連線中
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pb-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">目前最新狀態</div>
+                <div id="current-status" class="text-2xl font-extrabold text-indigo-600 mt-2">分析中...</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">所選區間喝水量</div>
+                <div id="stat-water" class="text-2xl font-extrabold text-sky-600 mt-2">0 mL</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">電腦前工作時長</div>
+                <div id="stat-uptime" class="text-2xl font-extrabold text-emerald-600 mt-2">0 小時 0 分</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">疲勞狀態指數</div>
+                <div id="stat-health" class="text-2xl font-extrabold text-emerald-500 mt-2">良好</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                <h3 class="text-lg font-bold text-slate-700 mb-4" id="mixed-chart-title">座艙環境與行為疊圖</h3>
+                <div class="h-96"><canvas id="chart-mixed"></canvas></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
+                <h3 class="text-lg font-bold text-slate-700 w-full mb-4 text-left">當日工時占比圖</h3>
+                <div class="h-72 w-72"><canvas id="chart-health"></canvas></div>
+                <div id="health-alert" class="mt-4 text-sm font-semibold text-center text-red-500 hidden">
+                    ⚠️ 警告：今日使用電腦已超過 8 小時，請注意休息！
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-lg font-bold text-slate-700 mb-4">水杯淨重追蹤 (濾波後)</h3>
+                <div class="h-72"><canvas id="chart-weight"></canvas></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 全域控制變數
+        let chartMixed, chartHealth, chartWeight;
+        let globalRawData = null; 
+
+        // 1. FIREBASE 初始化配置
+        const firebaseConfig = {
+            databaseURL: "https://esp-to-web-72def-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 預設日期設定為今天 (台灣時間)
+        window.onload = function() {
+            const today = new Date().toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
+            document.getElementById('date-picker').value = today;
+            
+            initCharts();
+            
+            // 開始實時連線 Firebase 最底層的 log
+            db.ref("/sensors/esp32/log").on("value", (snapshot) => {
+                globalRawData = snapshot.val();
+                if (globalRawData) {
+                    onDateOrViewChange(); // 收到資料或切換選單時觸發運算
+                } else {
+                    document.getElementById("current-status").innerText = "資料庫空無數據";
+                }
+            });
+        };
+
+        // 核心切換事件
+        function onDateOrViewChange() {
+            if (!globalRawData) return;
+            const targetDate = document.getElementById('date-picker').value;
+            const viewMode = document.getElementById('view-mode').value;
+            
+            processAndRender(globalRawData, targetDate, viewMode);
+        }
+
+        // ─── 3. 核心大腦：演算法解算中心 ─────────────────────────────────
+        function processAndRender(rawObjects, targetDate, viewMode) {
+            let dataArray = Object.values(rawObjects).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            // 變數宣告
+            let totalWaterDrunk = 0;
+            let stableWeightBuffer = [];
+            let lastStableWeight = null;
+            let totalInSeatSeconds = 0;
+            let lastValidDistance = 30;
+            let timelineProcessed = [];
+
+            // 🎯【第一輪：清洗時間格式、套用你的全新硬體條件判斷】
+            for (let i = 0; i < dataArray.length; i++) {
+                let item = dataArray[i];
+
+                // 時間防錯過濾
+                if (!item.timestamp || typeof item.timestamp !== 'string' || item.timestamp.includes("uptime") || isNaN(Date.parse(item.timestamp))) {
+                    continue;
+                }
+
+                let t = new Date(item.timestamp);
+                // 轉為台灣本地日期字串 YYYY-MM-DD
+                let itemDateStr = t.toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
+
+                // A. 超音波無效值過濾
+                let dist = item.distance_cm;
+                if (dist > 230 || dist <= 0) dist = lastValidDistance;
+                else lastValidDistance = dist;
+
+                // B. 水杯喝水量濾波演算法
+                let currentWeight = item.weight_g;
+                if (stableWeightBuffer.length === 0) {
+                    stableWeightBuffer.push(currentWeight);
+                } else {
+                    let lastInBuf = stableWeightBuffer[stableWeightBuffer.length - 1];
+                    if (Math.abs(currentWeight - lastInBuf) < 2.0) {
+                        stableWeightBuffer.push(currentWeight);
+                    } else {
+                        stableWeightBuffer = [currentWeight];
+                    }
+                }
+                if (stableWeightBuffer.length >= 3) {
+                    let avgStableWeight = stableWeightBuffer.reduce((a,b)=>a+b, 0) / stableWeightBuffer.length;
+                    if (lastStableWeight !== null) {
+                        let weightDiff = lastStableWeight - avgStableWeight;
+                        if (weightDiff > 5.0) totalWaterDrunk += weightDiff;
+                    }
+                    lastStableWeight = avgStableWeight;
+                    stableWeightBuffer = [];
+                }
+
+                // 🎯【核心修正：完全遵照你的條件定義】
+                let isPresent = dist <= 80;          // 距離 < 1m
+                let isScreenOpen = item.light_pct < 80; // 螢幕打開 (<80)
+                let isScreenBlack = item.light_pct > 90;// 螢幕黑屏 (>90)
+                
+                let tempStatus = "未知";
+                if (isPresent && isScreenOpen) {
+                    tempStatus = "上班中";
+                } else if (!isPresent && isScreenBlack) {
+                    tempStatus = "休息中"; // 距離>1m 且 螢幕>90
+                } else {
+                    tempStatus = "休息中"; // 其餘游離狀態暫歸為休息，等下一輪做下班判定
+                }
+
+                timelineProcessed.push({
+                    timestamp: t,
+                    dateStr: itemDateStr,
+                    distance: dist,
+                    light: item.light_pct,
+                    weight: lastStableWeight || currentWeight,
+                    status: tempStatus
+                });
+            }
+
+            // 🎯【第二輪：修正下班判定（休息達 3 小時以上變下班）】
+            let restStartIndex = null;
+            for (let i = 0; i < timelineProcessed.length; i++) {
+                if (timelineProcessed[i].status === "休息中") {
+                    if (restStartIndex === null) restStartIndex = i;
+                } else if (timelineProcessed[i].status === "上班中") {
+                    if (restStartIndex !== null) {
+                        let durationMs = timelineProcessed[i].timestamp - timelineProcessed[restStartIndex].timestamp;
+                        // 判定是否連續休息(人不在且關機)大於 3 小時
+                        if (durationMs >= 3 * 60 * 60 * 1000) {
+                            for (let j = restStartIndex; j < i; j++) {
+                                timelineProcessed[j].status = "下班";
+                            }
+                        }
+                        restStartIndex = null;
+                    }
+                }
+            }
+            if (restStartIndex !== null) {
+                let durationMs = timelineProcessed[timelineProcessed.length-1].timestamp - timelineProcessed[restStartIndex].timestamp;
+                if (durationMs >= 3 * 60 * 60 * 1000) {
+                    for (let j = restStartIndex; j < timelineProcessed.length; j++) {
+                        timelineProcessed[j].status = "下班";
+                    }
+                }
+            }
+
+            // 🎯【第三輪：根據控制列所選的「日期」與「檢視模式」進行篩選與出圖】
+            let filteredTimeline = [];
+            
+            if (viewMode === 'day') {
+                // 單日完整模式：只篩選等於所選日期的資料
+                filteredTimeline = timelineProcessed.filter(item => item.dateStr === targetDate);
+                document.getElementById('mixed-chart-title').innerText = `座艙環境與行為疊圖 (${targetDate} 當天完整記錄)`;
+            } else {
+                // 週模式：篩選目標日期前後 7 天的資料，並以 2 小時為一個間隔進行降維聚合
+                let endPeriod = new Date(targetDate + "T23:59:59");
+                let startPeriod = new Date(endPeriod.getTime() - 7 * 24 * 60 * 60 * 1000);
+                document.getElementById('mixed-chart-title').innerText = `座艙環境與行為趨勢圖 (${startPeriod.toLocaleDateString()} ~ ${endPeriod.toLocaleDateString()} 每兩小時聚合)`;
+
+                let rawWeekData = timelineProcessed.filter(item => item.timestamp >= startPeriod && item.timestamp <= endPeriod);
+                filteredTimeline = aggregateDataBy2Hours(rawWeekData);
+            }
+
+            // 計算上方即時看板數字 (以當前篩選區間加總)
+            let seatSeconds = 0;
+            filteredTimeline.forEach(item => {
+                if (item.status === "上班中") {
+                    seatSeconds += (viewMode === 'day') ? 10 : 7200; // 單日版每筆代表10秒，週聚合版每筆2小時
+                }
+            });
+
+            // 更新即時 UI
+            if (timelineProcessed.length > 0) {
+                document.getElementById("current-status").innerText = timelineProcessed[timelineProcessed.length - 1].status;
+                const statusEl = document.getElementById("current-status");
+                if(statusEl.innerText === "上班中") statusEl.className = "text-2xl font-extrabold text-emerald-600 mt-2";
+                else if(statusEl.innerText === "休息中") statusEl.className = "text-2xl font-extrabold text-amber-500 mt-2";
+                else statusEl.className = "text-2xl font-extrabold text-slate-400 mt-2";
+            }
+
+            document.getElementById("stat-water").innerText = `${totalWaterDrunk.toFixed(0)} mL`;
+            let hrs = Math.floor(seatSeconds / 3600);
+            let mns = Math.floor((seatSeconds % 3600) / 60);
+            document.getElementById("stat-uptime").innerText = `${hrs} 小時 ${mns} 分`;
+
+            const healthEl = document.getElementById("stat-health");
+            const alertEl = document.getElementById("health-alert");
+            if (hrs >= 8) {
+                healthEl.innerText = "疲勞/不健康";
+                healthEl.className = "text-2xl font-extrabold text-red-500 mt-2";
+                if(viewMode === 'day') alertEl.classList.remove("hidden");
+            } else {
+                healthEl.innerText = "良好";
+                healthEl.className = "text-2xl font-extrabold text-emerald-500 mt-2";
+                alertEl.classList.add("hidden");
+            }
+
+            // 渲染至 Chart.js 畫布
+            renderCharts(filteredTimeline, hrs);
+        }
+
+        // 🧮 週檢視：每 2 小時切切碎聚合演算法
+        function aggregateDataBy2Hours(dataArr) {
+            if (dataArr.length === 0) return [];
+            let result = [];
+            
+            // 以 2 小時 (7200000 毫秒) 為一個桶子
+            let intervalMs = 2 * 60 * 60 * 1000;
+            let startTime = Math.floor(dataArr[0].timestamp.getTime() / intervalMs) * intervalMs;
+            let endTime = dataArr[dataArr.length - 1].timestamp.getTime();
+
+            for (let b = startTime; b <= endTime; b += intervalMs) {
+                let bucketData = dataArr.filter(item => item.timestamp.getTime() >= b && item.timestamp.getTime() < b + intervalMs);
+                if (bucketData.length > 0) {
+                    // 算平均值
+                    let avgDist = bucketData.reduce((a,b)=>a+b.distance, 0) / bucketData.length;
+                    let avgLight = bucketData.reduce((a,b)=>a+b.light, 0) / bucketData.length;
+                    let avgWeight = bucketData.reduce((a,b)=>a+b.weight, 0) / bucketData.length;
+                    
+                    // 票選這個時段最常出現的狀態
+                    let counts = {"上班中":0, "休息中":0, "下班":0};
+                    bucketData.forEach(item => counts[item.status]++);
+                    let majorStatus = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+
+                    result.push({
+                        timestamp: new Date(b),
+                        distance: avgDist,
+                        light: avgLight,
+                        weight: avgWeight,
+                        status: majorStatus
+                    });
+                }
+            }
+            return result;
+        }
+
+        // ─── 4. CHART.JS 圖表刷洗渲染 ─────────────────────────────────
+        function renderCharts(timeline, workHours) {
+            // 定義 X 軸標籤格式
+            const labels = timeline.map(item => {
+                return item.timestamp.toLocaleString('zh-TW', {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+            });
+
+            // A. 混合疊圖刷新
+            chartMixed.data.labels = labels;
+            chartMixed.data.datasets[0].data = timeline.map(item => item.distance);
+            chartMixed.data.datasets[1].data = timeline.map(item => item.light);
+            chartMixed.data.datasets[2].data = timeline.map(item => {
+                if (item.status === "上班中") return 100;
+                if (item.status === "休息中") return 40;
+                return 10; // 下班
+            });
+            // 動態調整背景色塊：讓上班、休息、下班直接在圖表背景反映出來
+            chartMixed.data.datasets[2].backgroundColor = timeline.map(item => {
+                if (item.status === "上班中") return 'rgba(16, 185, 129, 0.15)'; // 綠色色塊
+                if (item.status === "休息中") return 'rgba(245, 158, 11, 0.1)';  // 黃色色塊
+                return 'rgba(148, 163, 184, 0.05)';                            // 灰色色塊
+            });
+            chartMixed.update();
+
+            // B. 圓餅占比圖刷新
+            let restHours = Math.max(0, 24 - workHours);
+            chartHealth.data.datasets[0].data = [workHours, restHours];
+            chartHealth.data.datasets[0].backgroundColor = workHours >= 8 ? ['#ef4444', '#cbd5e1'] : ['#10b981', '#cbd5e1'];
+            chartHealth.update();
+
+            // C. 重量時序圖刷新
+            chartWeight.data.labels = labels;
+            chartWeight.data.datasets[0].data = timeline.map(item => item.weight);
+            chartWeight.update();
+        }
+
+        // ─── 5. 初始化三個空圖表 ───────────────────────────────────────
+        function initCharts() {
+            // 混合圖（距離線 + 亮度線 + 行為色塊背景）
+            chartMixed = new Chart(document.getElementById('chart-mixed'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: '距離 (cm)', data: [], borderColor: '#6366f1', borderWidth: 2, yAxisID: 'y', tension: 0.1 },
+                        { label: '光敏電阻值 (LDR)', data: [], borderColor: '#f59e0b', borderWidth: 2, yAxisID: 'y1', tension: 0.1 },
+                        { label: '行為指標區域 (高:上班 | 中:休息 | 低:下班)', data: [], type: 'bar', backgroundColor: [], barPercentage: 1.0, categoryPercentage: 1.0, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { 
+                        y: { type: 'linear', position: 'left', title: { display: true, text: '公分 (cm)' } }, 
+                        y1: { type: 'linear', position: 'right', max: 120, min: 0, grid: { drawOnChartArea: false }, title: { display: true, text: '感應器數值' } } 
+                    }
+                }
+            });
+
+            // 圓餅圖
+            chartHealth = new Chart(document.getElementById('chart-health'), {
+                type: 'doughnut',
+                data: { labels: ['工作時數', '休息時數'], datasets: [{ data: [0, 24], backgroundColor: ['#10b981', '#cbd5e1'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 重量圖
+            chartWeight = new Chart(document.getElementById('chart-weight'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: '水杯淨重 (g)', data: [], borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.05)', fill: true, tension: 0.2 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    </script>
+</body>
+</html>
