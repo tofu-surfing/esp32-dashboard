@@ -110,17 +110,179 @@
             processAndRender(globalRawData, targetDate, viewMode);
         }
 
+        // // ─── 3. 核心大腦：演算法解算中心 ─────────────────────────────────
+        // function processAndRender(rawObjects, targetDate, viewMode) {
+        //     let dataArray = Object.values(rawObjects).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+        //     // 變數宣告
+        //     let totalWaterDrunk = 0;
+        //     let stableWeightBuffer = [];
+        //     let lastStableWeight = null;
+        //     let totalInSeatSeconds = 0;
+        //     let lastValidDistance = 30;
+        //     let timelineProcessed = [];
+
+        //     // 🎯【第一輪：清洗時間格式、套用你的全新硬體條件判斷】
+        //     for (let i = 0; i < dataArray.length; i++) {
+        //         let item = dataArray[i];
+
+        //         // 時間防錯過濾
+        //         if (!item.timestamp || typeof item.timestamp !== 'string' || item.timestamp.includes("uptime") || isNaN(Date.parse(item.timestamp))) {
+        //             continue;
+        //         }
+
+        //         let t = new Date(item.timestamp);
+        //         // 轉為台灣本地日期字串 YYYY-MM-DD
+        //         let itemDateStr = t.toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
+
+        //         // A. 超音波無效值過濾
+        //         let dist = item.distance_cm;
+        //         if (dist > 230 || dist <= 0) dist = lastValidDistance;
+        //         else lastValidDistance = dist;
+
+        //         // B. 水杯喝水量濾波演算法
+        //         let currentWeight = item.weight_g;
+        //         if (stableWeightBuffer.length === 0) {
+        //             stableWeightBuffer.push(currentWeight);
+        //         } else {
+        //             let lastInBuf = stableWeightBuffer[stableWeightBuffer.length - 1];
+        //             if (Math.abs(currentWeight - lastInBuf) < 2.0) {
+        //                 stableWeightBuffer.push(currentWeight);
+        //             } else {
+        //                 stableWeightBuffer = [currentWeight];
+        //             }
+        //         }
+        //         if (stableWeightBuffer.length >= 3) {
+        //             let avgStableWeight = stableWeightBuffer.reduce((a,b)=>a+b, 0) / stableWeightBuffer.length;
+        //             if (lastStableWeight !== null) {
+        //                 let weightDiff = lastStableWeight - avgStableWeight;
+        //                 if (weightDiff > 5.0) totalWaterDrunk += weightDiff;
+        //             }
+        //             lastStableWeight = avgStableWeight;
+        //             stableWeightBuffer = [];
+        //         }
+
+        //         // 🎯【核心修正：完全遵照你的條件定義】
+        //         let isPresent = dist <= 80;          // 距離 < 1m
+        //         let isScreenOpen = item.light_pct < 80; // 螢幕打開 (<80)
+        //         let isScreenBlack = item.light_pct > 90;// 螢幕黑屏 (>90)
+                
+        //         let tempStatus = "未知";
+        //         if (isPresent && isScreenOpen) {
+        //             tempStatus = "上班中";
+        //         } else if (!isPresent && isScreenBlack) {
+        //             tempStatus = "休息中"; // 距離>1m 且 螢幕>90
+        //         } else {
+        //             tempStatus = "休息中"; // 其餘游離狀態暫歸為休息，等下一輪做下班判定
+        //         }
+
+        //         timelineProcessed.push({
+        //             timestamp: t,
+        //             dateStr: itemDateStr,
+        //             distance: dist,
+        //             light: item.light_pct,
+        //             weight: lastStableWeight || currentWeight,
+        //             status: tempStatus
+        //         });
+        //     }
+
+        //     // 🎯【第二輪：修正下班判定（休息達 3 小時以上變下班）】
+        //     let restStartIndex = null;
+        //     for (let i = 0; i < timelineProcessed.length; i++) {
+        //         if (timelineProcessed[i].status === "休息中") {
+        //             if (restStartIndex === null) restStartIndex = i;
+        //         } else if (timelineProcessed[i].status === "上班中") {
+        //             if (restStartIndex !== null) {
+        //                 let durationMs = timelineProcessed[i].timestamp - timelineProcessed[restStartIndex].timestamp;
+        //                 // 判定是否連續休息(人不在且關機)大於 3 小時
+        //                 if (durationMs >= 3 * 60 * 60 * 1000) {
+        //                     for (let j = restStartIndex; j < i; j++) {
+        //                         timelineProcessed[j].status = "下班";
+        //                     }
+        //                 }
+        //                 restStartIndex = null;
+        //             }
+        //         }
+        //     }
+        //     if (restStartIndex !== null) {
+        //         let durationMs = timelineProcessed[timelineProcessed.length-1].timestamp - timelineProcessed[restStartIndex].timestamp;
+        //         if (durationMs >= 3 * 60 * 60 * 1000) {
+        //             for (let j = restStartIndex; j < timelineProcessed.length; j++) {
+        //                 timelineProcessed[j].status = "下班";
+        //             }
+        //         }
+        //     }
+
+        //     // 🎯【第三輪：根據控制列所選的「日期」與「檢視模式」進行篩選與出圖】
+        //     let filteredTimeline = [];
+            
+        //     if (viewMode === 'day') {
+        //         // 單日完整模式：只篩選等於所選日期的資料
+        //         filteredTimeline = timelineProcessed.filter(item => item.dateStr === targetDate);
+        //         document.getElementById('mixed-chart-title').innerText = `座艙環境與行為疊圖 (${targetDate} 當天完整記錄)`;
+        //     } else {
+        //         // 週模式：篩選目標日期前後 7 天的資料，並以 2 小時為一個間隔進行降維聚合
+        //         let endPeriod = new Date(targetDate + "T23:59:59");
+        //         let startPeriod = new Date(endPeriod.getTime() - 7 * 24 * 60 * 60 * 1000);
+        //         document.getElementById('mixed-chart-title').innerText = `座艙環境與行為趨勢圖 (${startPeriod.toLocaleDateString()} ~ ${endPeriod.toLocaleDateString()} 每兩小時聚合)`;
+
+        //         let rawWeekData = timelineProcessed.filter(item => item.timestamp >= startPeriod && item.timestamp <= endPeriod);
+        //         filteredTimeline = aggregateDataBy2Hours(rawWeekData);
+        //     }
+
+        //     // 計算上方即時看板數字 (以當前篩選區間加總)
+        //     let seatSeconds = 0;
+        //     filteredTimeline.forEach(item => {
+        //         if (item.status === "上班中") {
+        //             seatSeconds += (viewMode === 'day') ? 10 : 7200; // 單日版每筆代表10秒，週聚合版每筆2小時
+        //         }
+        //     });
+
+        //     // 更新即時 UI
+        //     if (timelineProcessed.length > 0) {
+        //         document.getElementById("current-status").innerText = timelineProcessed[timelineProcessed.length - 1].status;
+        //         const statusEl = document.getElementById("current-status");
+        //         if(statusEl.innerText === "上班中") statusEl.className = "text-2xl font-extrabold text-emerald-600 mt-2";
+        //         else if(statusEl.innerText === "休息中") statusEl.className = "text-2xl font-extrabold text-amber-500 mt-2";
+        //         else statusEl.className = "text-2xl font-extrabold text-slate-400 mt-2";
+        //     }
+
+        //     document.getElementById("stat-water").innerText = `${totalWaterDrunk.toFixed(0)} mL`;
+        //     let hrs = Math.floor(seatSeconds / 3600);
+        //     let mns = Math.floor((seatSeconds % 3600) / 60);
+        //     document.getElementById("stat-uptime").innerText = `${hrs} 小時 ${mns} 分`;
+
+        //     const healthEl = document.getElementById("stat-health");
+        //     const alertEl = document.getElementById("health-alert");
+        //     if (hrs >= 8) {
+        //         healthEl.innerText = "疲勞/不健康";
+        //         healthEl.className = "text-2xl font-extrabold text-red-500 mt-2";
+        //         if(viewMode === 'day') alertEl.classList.remove("hidden");
+        //     } else {
+        //         healthEl.innerText = "良好";
+        //         healthEl.className = "text-2xl font-extrabold text-emerald-500 mt-2";
+        //         alertEl.classList.add("hidden");
+        //     }
+
+        //     // 渲染至 Chart.js 畫布
+        //     renderCharts(filteredTimeline, hrs);
+        // }
         // ─── 3. 核心大腦：演算法解算中心 ─────────────────────────────────
         function processAndRender(rawObjects, targetDate, viewMode) {
             let dataArray = Object.values(rawObjects).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             
             // 變數宣告
-            let totalWaterDrunk = 0;
+            let totalWaterToday = 0;         // 🎯 新增：專屬當天的喝水量
+            let totalWaterSelectedRange = 0; // 🎯 新增：專屬所選區間的喝水量
+            
             let stableWeightBuffer = [];
             let lastStableWeight = null;
             let totalInSeatSeconds = 0;
             let lastValidDistance = 30;
             let timelineProcessed = [];
+
+            // 取得今天的台灣日期字串 (用來鎖定當天喝水量)
+            const todayStr = new Date().toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
 
             // 🎯【第一輪：清洗時間格式、套用你的全新硬體條件判斷】
             for (let i = 0; i < dataArray.length; i++) {
@@ -142,6 +304,9 @@
 
                 // B. 水杯喝水量濾波演算法
                 let currentWeight = item.weight_g;
+                let isWaterEvent = false; // 記錄這一步是不是喝水事件
+                let weightDiff = 0;
+
                 if (stableWeightBuffer.length === 0) {
                     stableWeightBuffer.push(currentWeight);
                 } else {
@@ -155,11 +320,22 @@
                 if (stableWeightBuffer.length >= 3) {
                     let avgStableWeight = stableWeightBuffer.reduce((a,b)=>a+b, 0) / stableWeightBuffer.length;
                     if (lastStableWeight !== null) {
-                        let weightDiff = lastStableWeight - avgStableWeight;
-                        if (weightDiff > 5.0) totalWaterDrunk += weightDiff;
+                        weightDiff = lastStableWeight - avgStableWeight;
+                        if (weightDiff > 5.0) {
+                            isWaterEvent = true;
+                        }
                     }
                     lastStableWeight = avgStableWeight;
                     stableWeightBuffer = [];
+                }
+
+                // ─── 🎯 喝水量精準分流計算 ───
+                if (isWaterEvent) {
+                    // 1. 如果事件日期就是今天，加總到當天喝水量
+                    if (itemDateStr === todayStr) {
+                        totalWaterToday += weightDiff;
+                    }
+                    // 2. 如果是單日模式且是選中那天，或者處於週模式，先暫存這個事件供後續判定
                 }
 
                 // 🎯【核心修正：完全遵照你的條件定義】
@@ -182,7 +358,9 @@
                     distance: dist,
                     light: item.light_pct,
                     weight: lastStableWeight || currentWeight,
-                    status: tempStatus
+                    status: tempStatus,
+                    isWaterEvent: isWaterEvent, // 帶到下一輪
+                    weightDiff: weightDiff
                 });
             }
 
@@ -194,7 +372,6 @@
                 } else if (timelineProcessed[i].status === "上班中") {
                     if (restStartIndex !== null) {
                         let durationMs = timelineProcessed[i].timestamp - timelineProcessed[restStartIndex].timestamp;
-                        // 判定是否連續休息(人不在且關機)大於 3 小時
                         if (durationMs >= 3 * 60 * 60 * 1000) {
                             for (let j = restStartIndex; j < i; j++) {
                                 timelineProcessed[j].status = "下班";
@@ -220,25 +397,36 @@
                 // 單日完整模式：只篩選等於所選日期的資料
                 filteredTimeline = timelineProcessed.filter(item => item.dateStr === targetDate);
                 document.getElementById('mixed-chart-title').innerText = `座艙環境與行為疊圖 (${targetDate} 當天完整記錄)`;
+                
+                // 🎯 加總所選單日的喝水量
+                filteredTimeline.forEach(item => {
+                    if (item.isWaterEvent) totalWaterSelectedRange += item.weightDiff;
+                });
             } else {
-                // 週模式：篩選目標日期前後 7 天的資料，並以 2 小時為一個間隔進行降維聚合
+                // 週模式：篩選目標日期前後 7 天的資料
                 let endPeriod = new Date(targetDate + "T23:59:59");
                 let startPeriod = new Date(endPeriod.getTime() - 7 * 24 * 60 * 60 * 1000);
                 document.getElementById('mixed-chart-title').innerText = `座艙環境與行為趨勢圖 (${startPeriod.toLocaleDateString()} ~ ${endPeriod.toLocaleDateString()} 每兩小時聚合)`;
 
                 let rawWeekData = timelineProcessed.filter(item => item.timestamp >= startPeriod && item.timestamp <= endPeriod);
+                
+                // 🎯 加總整週區間內的喝水量
+                rawWeekData.forEach(item => {
+                    if (item.isWaterEvent) totalWaterSelectedRange += item.weightDiff;
+                });
+
                 filteredTimeline = aggregateDataBy2Hours(rawWeekData);
             }
 
-            // 計算上方即時看板數字 (以當前篩選區間加總)
+            // 計算上班時間
             let seatSeconds = 0;
             filteredTimeline.forEach(item => {
                 if (item.status === "上班中") {
-                    seatSeconds += (viewMode === 'day') ? 10 : 7200; // 單日版每筆代表10秒，週聚合版每筆2小時
+                    seatSeconds += (viewMode === 'day') ? 10 : 7200;
                 }
             });
 
-            // 更新即時 UI
+            // 更新即時 UI 狀態文字
             if (timelineProcessed.length > 0) {
                 document.getElementById("current-status").innerText = timelineProcessed[timelineProcessed.length - 1].status;
                 const statusEl = document.getElementById("current-status");
@@ -247,7 +435,13 @@
                 else statusEl.className = "text-2xl font-extrabold text-slate-400 mt-2";
             }
 
-            document.getElementById("stat-water").innerText = `${totalWaterDrunk.toFixed(0)} mL`;
+            // 🎯【更新資訊方塊】：動態調配喝水量語意
+            // 將「所選區間喝水量」方塊填入對應區間加總值
+            document.getElementById("stat-water").innerText = `${totalWaterSelectedRange.toFixed(0)} mL`;
+            
+            // 💡 提示：如果你想把「目前最新狀態」或網頁某處改成「今日總喝水」，可以用 totalWaterToday 變數。
+            // 這裡將 stat-water 綁定為使用者所選區間的喝水量。
+
             let hrs = Math.floor(seatSeconds / 3600);
             let mns = Math.floor((seatSeconds % 3600) / 60);
             document.getElementById("stat-uptime").innerText = `${hrs} 小時 ${mns} 分`;
@@ -264,7 +458,6 @@
                 alertEl.classList.add("hidden");
             }
 
-            // 渲染至 Chart.js 畫布
             renderCharts(filteredTimeline, hrs);
         }
 
