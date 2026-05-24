@@ -1,0 +1,268 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1032pt" height="961pt" viewBox="0.00 0.00 1032.00 961.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 957.4)">
+<title>ESP32_IoT_Dashboard_System</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-957.4 1028,-957.4 1028,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_hardware</title>
+<path fill="#f5f3ff" stroke="#6366f1" stroke-dasharray="5,2" d="M20,-478.8C20,-478.8 521,-478.8 521,-478.8 527,-478.8 533,-484.8 533,-490.8 533,-490.8 533,-933.4 533,-933.4 533,-939.4 527,-945.4 521,-945.4 521,-945.4 20,-945.4 20,-945.4 14,-945.4 8,-939.4 8,-933.4 8,-933.4 8,-490.8 8,-490.8 8,-484.8 14,-478.8 20,-478.8"/>
+<text xml:space="preserve" text-anchor="middle" x="153.67" y="-928.8" font-family="Microsoft JhengHei" font-size="14.00">【 1. ESP32 智慧座艙硬體端 (C 語言 / FreeRTOS) 】</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_cloud</title>
+<path fill="#fef3c7" stroke="#f59e0b" stroke-dasharray="5,2" d="M553,-384.4C553,-384.4 735,-384.4 735,-384.4 741,-384.4 747,-390.4 747,-396.4 747,-396.4 747,-557 747,-557 747,-563 741,-569 735,-569 735,-569 553,-569 553,-569 547,-569 541,-563 541,-557 541,-557 541,-396.4 541,-396.4 541,-390.4 547,-384.4 553,-384.4"/>
+<text xml:space="preserve" text-anchor="middle" x="631.43" y="-552.4" font-family="Microsoft JhengHei" font-size="14.00">【 2. 雲端資料庫 (Serverless) 】</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_frontend</title>
+<path fill="#ecfdf5" stroke="#10b981" stroke-dasharray="5,2" d="M280,-8C280,-8 1004,-8 1004,-8 1010,-8 1016,-14 1016,-20 1016,-20 1016,-316.8 1016,-316.8 1016,-322.8 1010,-328.8 1004,-328.8 1004,-328.8 280,-328.8 280,-328.8 274,-328.8 268,-322.8 268,-316.8 268,-316.8 268,-20 268,-20 268,-14 274,-8 280,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="416.17" y="-312.2" font-family="Microsoft JhengHei" font-size="14.00">【 3. 前端 Dashboard 看板 (HTML5 / JavaScript) 】</text>
+</g>
+<!-- HC_SR04 -->
+<g id="node1" class="node">
+<title>HC_SR04</title>
+<path fill="#e0e7ff" stroke="#4f46e5" d="M151.53,-912.6C151.53,-912.6 28.47,-912.6 28.47,-912.6 22.47,-912.6 16.47,-906.6 16.47,-900.6 16.47,-900.6 16.47,-883 16.47,-883 16.47,-877 22.47,-871 28.47,-871 28.47,-871 151.53,-871 151.53,-871 157.53,-871 163.53,-877 163.53,-883 163.53,-883 163.53,-900.6 163.53,-900.6 163.53,-906.6 157.53,-912.6 151.53,-912.6"/>
+<text xml:space="preserve" text-anchor="middle" x="90" y="-896" font-family="Microsoft JhengHei" font-size="14.00">超音波感測器 (HC-SR04)</text>
+<text xml:space="preserve" text-anchor="middle" x="90" y="-879.2" font-family="Microsoft JhengHei" font-size="14.00">[GPIO 21, 22]</text>
+</g>
+<!-- MCU -->
+<g id="node4" class="node">
+<title>MCU</title>
+<path fill="#c7d2fe" stroke="#4338ca" d="M313.32,-793.4C313.32,-793.4 218.68,-793.4 218.68,-793.4 212.68,-793.4 206.68,-787.4 206.68,-781.4 206.68,-781.4 206.68,-763.8 206.68,-763.8 206.68,-757.8 212.68,-751.8 218.68,-751.8 218.68,-751.8 313.32,-751.8 313.32,-751.8 319.32,-751.8 325.32,-757.8 325.32,-763.8 325.32,-763.8 325.32,-781.4 325.32,-781.4 325.32,-787.4 319.32,-793.4 313.32,-793.4"/>
+<text xml:space="preserve" text-anchor="middle" x="266" y="-776.8" font-family="Microsoft JhengHei" font-size="14.00" fill="#1e1b4b">ESP32 主控晶片</text>
+<text xml:space="preserve" text-anchor="middle" x="266" y="-760" font-family="Microsoft JhengHei" font-size="14.00" fill="#1e1b4b">(Dual Core / v6.0)</text>
+</g>
+<!-- HC_SR04&#45;&gt;MCU -->
+<g id="edge1" class="edge">
+<title>HC_SR04-&gt;MCU</title>
+<path fill="none" stroke="#475569" d="M110.68,-870.56C127.95,-854.35 153.72,-831.69 178.84,-815.4 188.6,-809.07 199.47,-803.1 210.12,-797.76"/>
+<polygon fill="#475569" stroke="#475569" points="217.12,-794.34 211.51,-801.09 214.62,-795.57 209.93,-797.86 209.93,-797.86 209.93,-797.86 214.62,-795.57 208.35,-794.62 217.12,-794.34"/>
+<text xml:space="preserve" text-anchor="middle" x="217.92" y="-836.4" font-family="Microsoft JhengHei" font-size="14.00">讀取微秒脈衝</text>
+<text xml:space="preserve" text-anchor="middle" x="217.92" y="-819.6" font-family="Microsoft JhengHei" font-size="14.00">(100ms防卡死)</text>
+</g>
+<!-- HX711 -->
+<g id="node2" class="node">
+<title>HX711</title>
+<path fill="#e0e7ff" stroke="#4f46e5" d="M320.52,-912.6C320.52,-912.6 211.48,-912.6 211.48,-912.6 205.48,-912.6 199.48,-906.6 199.48,-900.6 199.48,-900.6 199.48,-883 199.48,-883 199.48,-877 205.48,-871 211.48,-871 211.48,-871 320.52,-871 320.52,-871 326.52,-871 332.52,-877 332.52,-883 332.52,-883 332.52,-900.6 332.52,-900.6 332.52,-906.6 326.52,-912.6 320.52,-912.6"/>
+<text xml:space="preserve" text-anchor="middle" x="266" y="-896" font-family="Microsoft JhengHei" font-size="14.00">重量感測晶片 (HX711)</text>
+<text xml:space="preserve" text-anchor="middle" x="266" y="-879.2" font-family="Microsoft JhengHei" font-size="14.00">[GPIO 18, 4]</text>
+</g>
+<!-- HX711&#45;&gt;MCU -->
+<g id="edge2" class="edge">
+<title>HX711-&gt;MCU</title>
+<path fill="none" stroke="#475569" d="M266,-870.65C266,-852.04 266,-824.15 266,-803.04"/>
+<polygon fill="#475569" stroke="#475569" points="266,-795.1 269.6,-803.1 266,-797.88 266,-803.1 266,-803.1 266,-803.1 266,-797.88 262.4,-803.1 266,-795.1"/>
+<text xml:space="preserve" text-anchor="middle" x="315.58" y="-836.4" font-family="Microsoft JhengHei" font-size="14.00">讀取重量原始值</text>
+<text xml:space="preserve" text-anchor="middle" x="315.58" y="-819.6" font-family="Microsoft JhengHei" font-size="14.00">(100ms超時防阻塞)</text>
+</g>
+<!-- LDR -->
+<g id="node3" class="node">
+<title>LDR</title>
+<path fill="#e0e7ff" stroke="#4f46e5" d="M513.19,-912.6C513.19,-912.6 380.81,-912.6 380.81,-912.6 374.81,-912.6 368.81,-906.6 368.81,-900.6 368.81,-900.6 368.81,-883 368.81,-883 368.81,-877 374.81,-871 380.81,-871 380.81,-871 513.19,-871 513.19,-871 519.19,-871 525.19,-877 525.19,-883 525.19,-883 525.19,-900.6 525.19,-900.6 525.19,-906.6 519.19,-912.6 513.19,-912.6"/>
+<text xml:space="preserve" text-anchor="middle" x="447" y="-896" font-family="Microsoft JhengHei" font-size="14.00">光敏電阻 (LDR)</text>
+<text xml:space="preserve" text-anchor="middle" x="447" y="-879.2" font-family="Microsoft JhengHei" font-size="14.00">[ADC1_CH6 / GPIO 34]</text>
+</g>
+<!-- LDR&#45;&gt;MCU -->
+<g id="edge3" class="edge">
+<title>LDR-&gt;MCU</title>
+<path fill="none" stroke="#475569" d="M431.8,-870.82C418.21,-854.1 396.93,-830.6 374,-815.4 361.86,-807.35 347.94,-800.51 334.22,-794.84"/>
+<polygon fill="#475569" stroke="#475569" points="326.85,-791.9 335.61,-791.52 329.43,-792.93 334.28,-794.86 334.28,-794.86 334.28,-794.86 329.43,-792.93 332.95,-798.21 326.85,-791.9"/>
+<text xml:space="preserve" text-anchor="middle" x="458.1" y="-828" font-family="Microsoft JhengHei" font-size="14.00">讀取類比電壓百分比</text>
+</g>
+<!-- WDT -->
+<g id="node5" class="node">
+<title>WDT</title>
+<path fill="#fecaca" stroke="#dc2626" d="M181.85,-674.2C181.85,-674.2 54.15,-674.2 54.15,-674.2 48.15,-674.2 42.15,-668.2 42.15,-662.2 42.15,-662.2 42.15,-644.6 42.15,-644.6 42.15,-638.6 48.15,-632.6 54.15,-632.6 54.15,-632.6 181.85,-632.6 181.85,-632.6 187.85,-632.6 193.85,-638.6 193.85,-644.6 193.85,-644.6 193.85,-662.2 193.85,-662.2 193.85,-668.2 187.85,-674.2 181.85,-674.2"/>
+<text xml:space="preserve" text-anchor="middle" x="118" y="-657.6" font-family="Microsoft JhengHei" font-size="14.00" fill="#7f1d1d">🔒 硬體工作看門狗 (WDT)</text>
+<text xml:space="preserve" text-anchor="middle" x="118" y="-640.8" font-family="Microsoft JhengHei" font-size="14.00" fill="#7f1d1d">[15秒超時全系統自動重啟]</text>
+</g>
+<!-- MCU&#45;&gt;WDT -->
+<g id="edge4" class="edge">
+<title>MCU-&gt;WDT</title>
+<path fill="none" stroke="#ef4444" stroke-dasharray="1,5" d="M226.13,-751.32C215.01,-745 203.2,-737.62 193,-729.8 174.19,-715.38 155.39,-696.47 141.32,-681.19"/>
+<polygon fill="#ef4444" stroke="#ef4444" points="136.02,-675.36 144.07,-678.86 137.89,-677.42 141.4,-681.28 141.4,-681.28 141.4,-681.28 137.89,-677.42 138.74,-683.7 136.02,-675.36"/>
+<text xml:space="preserve" text-anchor="middle" x="224.5" y="-717.2" font-family="Microsoft JhengHei" font-size="14.00">每圈正常跑完</text>
+<text xml:space="preserve" text-anchor="middle" x="224.5" y="-700.4" font-family="Microsoft JhengHei" font-size="14.00">主動餵狗</text>
+</g>
+<!-- WIFI_STA -->
+<g id="node6" class="node">
+<title>WIFI_STA</title>
+<path fill="#bbf7d0" stroke="#16a34a" d="M512.16,-674.2C512.16,-674.2 405.84,-674.2 405.84,-674.2 399.84,-674.2 393.84,-668.2 393.84,-662.2 393.84,-662.2 393.84,-644.6 393.84,-644.6 393.84,-638.6 399.84,-632.6 405.84,-632.6 405.84,-632.6 512.16,-632.6 512.16,-632.6 518.16,-632.6 524.16,-638.6 524.16,-644.6 524.16,-644.6 524.16,-662.2 524.16,-662.2 524.16,-668.2 518.16,-674.2 512.16,-674.2"/>
+<text xml:space="preserve" text-anchor="middle" x="459" y="-657.6" font-family="Microsoft JhengHei" font-size="14.00">📡 Wi-Fi 站台模式</text>
+<text xml:space="preserve" text-anchor="middle" x="459" y="-640.8" font-family="Microsoft JhengHei" font-size="14.00">[斷線背景無限自動重連]</text>
+</g>
+<!-- MCU&#45;&gt;WIFI_STA -->
+<g id="edge15" class="edge">
+<title>MCU-&gt;WIFI_STA</title>
+<path fill="none" stroke="#475569" d="M299.18,-751.45C332.04,-731.5 382.45,-700.88 417.85,-679.39"/>
+<polygon fill="#475569" stroke="#475569" points="424.57,-675.31 419.6,-682.54 422.19,-676.75 417.73,-679.46 417.73,-679.46 417.73,-679.46 422.19,-676.75 415.86,-676.38 424.57,-675.31"/>
+<text xml:space="preserve" text-anchor="middle" x="416.96" y="-708.8" font-family="Microsoft JhengHei" font-size="14.00">調用射頻模組</text>
+</g>
+<!-- SNTP -->
+<g id="node7" class="node">
+<title>SNTP</title>
+<path fill="#fef08a" stroke="#ca8a04" d="M390.27,-528.4C390.27,-528.4 263.73,-528.4 263.73,-528.4 257.73,-528.4 251.73,-522.4 251.73,-516.4 251.73,-516.4 251.73,-498.8 251.73,-498.8 251.73,-492.8 257.73,-486.8 263.73,-486.8 263.73,-486.8 390.27,-486.8 390.27,-486.8 396.27,-486.8 402.27,-492.8 402.27,-498.8 402.27,-498.8 402.27,-516.4 402.27,-516.4 402.27,-522.4 396.27,-528.4 390.27,-528.4"/>
+<text xml:space="preserve" text-anchor="middle" x="327" y="-511.8" font-family="Microsoft JhengHei" font-size="14.00">🕒 SNTP 時間校時</text>
+<text xml:space="preserve" text-anchor="middle" x="327" y="-495" font-family="Microsoft JhengHei" font-size="14.00">(取得 ISO-8601 台灣時區)</text>
+</g>
+<!-- WIFI_STA&#45;&gt;SNTP -->
+<g id="edge5" class="edge">
+<title>WIFI_STA-&gt;SNTP</title>
+<path fill="none" stroke="#475569" d="M434.65,-632.27C427.01,-625.61 418.69,-618.01 411.5,-610.6 388.15,-586.54 363.98,-556.8 347.51,-535.65"/>
+<polygon fill="#475569" stroke="#475569" points="342.76,-529.52 350.51,-533.64 344.46,-531.72 347.66,-535.84 347.66,-535.84 347.66,-535.84 344.46,-531.72 344.81,-538.05 342.76,-529.52"/>
+<text xml:space="preserve" text-anchor="middle" x="437.75" y="-589.6" font-family="Microsoft JhengHei" font-size="14.00">網路開通後</text>
+</g>
+<!-- FIREBASE -->
+<g id="node8" class="node">
+<title>FIREBASE</title>
+<path fill="#fed7aa" stroke="#ea580c" d="M738.88,-531C738.88,-533.87 696.36,-536.2 644,-536.2 591.64,-536.2 549.12,-533.87 549.12,-531 549.12,-531 549.12,-484.2 549.12,-484.2 549.12,-481.33 591.64,-479 644,-479 696.36,-479 738.88,-481.33 738.88,-484.2 738.88,-484.2 738.88,-531 738.88,-531"/>
+<path fill="none" stroke="#ea580c" d="M738.88,-531C738.88,-528.13 696.36,-525.8 644,-525.8 591.64,-525.8 549.12,-528.13 549.12,-531"/>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-511.8" font-family="Microsoft JhengHei" font-size="14.00">🔥 Firebase Realtime Database</text>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-495" font-family="Microsoft JhengHei" font-size="14.00">[HTTPS / SSL 加密安全傳輸]</text>
+</g>
+<!-- WIFI_STA&#45;&gt;FIREBASE -->
+<g id="edge16" class="edge">
+<title>WIFI_STA-&gt;FIREBASE</title>
+<path fill="none" stroke="#2563eb" d="M485.11,-632.1C515.27,-608.66 565.34,-569.75 601.21,-541.86"/>
+<polygon fill="#2563eb" stroke="#2563eb" points="607.22,-537.19 603.11,-544.94 605.03,-538.89 600.91,-542.1 600.91,-542.1 600.91,-542.1 605.03,-538.89 598.7,-539.26 607.22,-537.19"/>
+<text xml:space="preserve" text-anchor="middle" x="622.07" y="-598" font-family="Microsoft JhengHei" font-size="14.00" fill="#2563eb">HTTPS POST</text>
+<text xml:space="preserve" text-anchor="middle" x="622.07" y="-581.2" font-family="Microsoft JhengHei" font-size="14.00" fill="#2563eb">(每 10 秒默默發送 payload)</text>
+</g>
+<!-- SNTP&#45;&gt;MCU -->
+<g id="edge17" class="edge">
+<title>SNTP-&gt;MCU</title>
+<path fill="none" stroke="#ca8a04" d="M318.7,-528.86C309.08,-553.12 293.43,-595.18 284.62,-632.6 275.79,-670.07 270.77,-714.29 268.21,-742.62"/>
+<polygon fill="#ca8a04" stroke="#ca8a04" points="267.55,-750.37 264.65,-742.09 267.78,-747.6 268.23,-742.4 268.23,-742.4 268.23,-742.4 267.78,-747.6 271.82,-742.71 267.55,-750.37"/>
+<text xml:space="preserve" text-anchor="middle" x="330.31" y="-657.6" font-family="Microsoft JhengHei" font-size="14.00">寫入系統時間</text>
+<text xml:space="preserve" text-anchor="middle" x="330.31" y="-640.8" font-family="Microsoft JhengHei" font-size="14.00">(格式化 ISO 字串)</text>
+</g>
+<!-- DB_PATH -->
+<g id="node9" class="node">
+<title>DB_PATH</title>
+<path fill="#ffedd5" stroke="#fdba74" d="M697.44,-434C697.44,-434 590.56,-434 590.56,-434 584.56,-434 578.56,-428 578.56,-422 578.56,-422 578.56,-404.4 578.56,-404.4 578.56,-398.4 584.56,-392.4 590.56,-392.4 590.56,-392.4 697.44,-392.4 697.44,-392.4 703.44,-392.4 709.44,-398.4 709.44,-404.4 709.44,-404.4 709.44,-422 709.44,-422 709.44,-428 703.44,-434 697.44,-434"/>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-417.4" font-family="Microsoft JhengHei" font-size="14.00">資料路徑</text>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-400.6" font-family="Microsoft JhengHei" font-size="14.00">"/sensors/esp32/log"</text>
+</g>
+<!-- FIREBASE&#45;&gt;DB_PATH -->
+<g id="edge6" class="edge">
+<title>FIREBASE-&gt;DB_PATH</title>
+<path fill="none" stroke="#475569" stroke-dasharray="5,2" d="M644,-478.63C644,-464.39 644,-447.41 644,-434.45"/>
+</g>
+<!-- WEB_APP -->
+<g id="node10" class="node">
+<title>WEB_APP</title>
+<path fill="#a7f3d0" stroke="#059669" d="M692.5,-296C692.5,-296 595.5,-296 595.5,-296 589.5,-296 583.5,-290 583.5,-284 583.5,-284 583.5,-266.4 583.5,-266.4 583.5,-260.4 589.5,-254.4 595.5,-254.4 595.5,-254.4 692.5,-254.4 692.5,-254.4 698.5,-254.4 704.5,-260.4 704.5,-266.4 704.5,-266.4 704.5,-284 704.5,-284 704.5,-290 698.5,-296 692.5,-296"/>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-279.4" font-family="Microsoft JhengHei" font-size="14.00">智慧座艙健康看板網頁</text>
+<text xml:space="preserve" text-anchor="middle" x="644" y="-262.6" font-family="Microsoft JhengHei" font-size="14.00">(index.html)</text>
+</g>
+<!-- DB_PATH&#45;&gt;WEB_APP -->
+<g id="edge18" class="edge">
+<title>DB_PATH-&gt;WEB_APP</title>
+<path fill="none" stroke="#059669" d="M644,-392.13C644,-369.23 644,-331.57 644,-305.42"/>
+<polygon fill="#059669" stroke="#059669" points="644,-297.57 647.6,-305.57 644,-300.35 644,-305.57 644,-305.57 644,-305.57 644,-300.35 640.4,-305.57 644,-297.57"/>
+<text xml:space="preserve" text-anchor="middle" x="714.18" y="-357.8" font-family="Microsoft JhengHei" font-size="14.00" fill="#059669">JS db.ref().on('value')</text>
+<text xml:space="preserve" text-anchor="middle" x="714.18" y="-341" font-family="Microsoft JhengHei" font-size="14.00" fill="#059669">(WebSocket 雙向即時監聽)</text>
+</g>
+<!-- GITHUB -->
+<g id="node11" class="node">
+<title>GITHUB</title>
+<path fill="#cbd5e1" stroke="#475569" d="M415.86,-176.8C415.86,-176.8 288.14,-176.8 288.14,-176.8 282.14,-176.8 276.14,-170.8 276.14,-164.8 276.14,-164.8 276.14,-147.2 276.14,-147.2 276.14,-141.2 282.14,-135.2 288.14,-135.2 288.14,-135.2 415.86,-135.2 415.86,-135.2 421.86,-135.2 427.86,-141.2 427.86,-147.2 427.86,-147.2 427.86,-164.8 427.86,-164.8 427.86,-170.8 421.86,-176.8 415.86,-176.8"/>
+<text xml:space="preserve" text-anchor="middle" x="352" y="-160.2" font-family="Microsoft JhengHei" font-size="14.00">🐙 GitHub Pages</text>
+<text xml:space="preserve" text-anchor="middle" x="352" y="-143.4" font-family="Microsoft JhengHei" font-size="14.00">[免費靜態託管 / 全平台相容]</text>
+</g>
+<!-- WEB_APP&#45;&gt;GITHUB -->
+<g id="edge7" class="edge">
+<title>WEB_APP-&gt;GITHUB</title>
+<path fill="none" stroke="#475569" stroke-dasharray="1,5" d="M583.13,-259.64C556.61,-252.56 525.42,-243.23 498.11,-232.4 461.97,-218.06 422.93,-197.64 394.31,-181.66"/>
+<polygon fill="#475569" stroke="#475569" points="387.58,-177.88 396.32,-178.67 390.01,-179.25 394.55,-181.8 394.55,-181.8 394.55,-181.8 390.01,-179.25 392.79,-184.94 387.58,-177.88"/>
+<text xml:space="preserve" text-anchor="middle" x="542.06" y="-219.8" font-family="Microsoft JhengHei" font-size="14.00">透過 Git 部署託管</text>
+</g>
+<!-- ALGO_WATER -->
+<g id="node12" class="node">
+<title>ALGO_WATER</title>
+<path fill="#e0f2fe" stroke="#0284c7" d="M613.97,-185.2C613.97,-185.2 476.03,-185.2 476.03,-185.2 470.03,-185.2 464.03,-179.2 464.03,-173.2 464.03,-173.2 464.03,-138.8 464.03,-138.8 464.03,-132.8 470.03,-126.8 476.03,-126.8 476.03,-126.8 613.97,-126.8 613.97,-126.8 619.97,-126.8 625.97,-132.8 625.97,-138.8 625.97,-138.8 625.97,-173.2 625.97,-173.2 625.97,-179.2 619.97,-185.2 613.97,-185.2"/>
+<text xml:space="preserve" text-anchor="middle" x="545" y="-168.6" font-family="Microsoft JhengHei" font-size="14.00">💧 喝水演算法</text>
+<text xml:space="preserve" text-anchor="middle" x="545" y="-151.8" font-family="Microsoft JhengHei" font-size="14.00">(連續3筆變動&lt;2g認定靜止</text>
+<text xml:space="preserve" text-anchor="middle" x="545" y="-135" font-family="Microsoft JhengHei" font-size="14.00">基準差&gt;5g判定喝水/略過加水)</text>
+</g>
+<!-- WEB_APP&#45;&gt;ALGO_WATER -->
+<g id="edge8" class="edge">
+<title>WEB_APP-&gt;ALGO_WATER</title>
+<path fill="none" stroke="#475569" d="M626.98,-254.05C612.74,-237.19 592.07,-212.73 575.05,-192.58"/>
+<polygon fill="#475569" stroke="#475569" points="569.99,-186.58 577.9,-190.37 571.78,-188.71 575.15,-192.69 575.15,-192.69 575.15,-192.69 571.78,-188.71 572.4,-195.02 569.99,-186.58"/>
+</g>
+<!-- ALGO_STATE -->
+<g id="node13" class="node">
+<title>ALGO_STATE</title>
+<path fill="#fae8ff" stroke="#c026d3" d="M813.62,-193.6C813.62,-193.6 674.38,-193.6 674.38,-193.6 668.38,-193.6 662.38,-187.6 662.38,-181.6 662.38,-181.6 662.38,-130.4 662.38,-130.4 662.38,-124.4 668.38,-118.4 674.38,-118.4 674.38,-118.4 813.62,-118.4 813.62,-118.4 819.62,-118.4 825.62,-124.4 825.62,-130.4 825.62,-130.4 825.62,-181.6 825.62,-181.6 825.62,-187.6 819.62,-193.6 813.62,-193.6"/>
+<text xml:space="preserve" text-anchor="middle" x="744" y="-177" font-family="Microsoft JhengHei" font-size="14.00">📊 智慧行為狀態機</text>
+<text xml:space="preserve" text-anchor="middle" x="744" y="-160.2" font-family="Microsoft JhengHei" font-size="14.00">(上班: 距離&lt;1m 且 LDR&lt;80</text>
+<text xml:space="preserve" text-anchor="middle" x="744" y="-143.4" font-family="Microsoft JhengHei" font-size="14.00">休息: 距離&gt;1m 且 LDR&gt;90</text>
+<text xml:space="preserve" text-anchor="middle" x="744" y="-126.6" font-family="Microsoft JhengHei" font-size="14.00">下班: 連續休息達 3小時以上)</text>
+</g>
+<!-- WEB_APP&#45;&gt;ALGO_STATE -->
+<g id="edge9" class="edge">
+<title>WEB_APP-&gt;ALGO_STATE</title>
+<path fill="none" stroke="#475569" d="M661.19,-254.05C673.72,-239.36 691.18,-218.9 706.84,-200.55"/>
+<polygon fill="#475569" stroke="#475569" points="711.72,-194.83 709.27,-203.25 709.92,-196.95 706.53,-200.92 706.53,-200.92 706.53,-200.92 709.92,-196.95 703.79,-198.58 711.72,-194.83"/>
+</g>
+<!-- ALGO_DIM -->
+<g id="node14" class="node">
+<title>ALGO_DIM</title>
+<path fill="#ffedd5" stroke="#ea580c" d="M996.33,-185.2C996.33,-185.2 873.67,-185.2 873.67,-185.2 867.67,-185.2 861.67,-179.2 861.67,-173.2 861.67,-173.2 861.67,-138.8 861.67,-138.8 861.67,-132.8 867.67,-126.8 873.67,-126.8 873.67,-126.8 996.33,-126.8 996.33,-126.8 1002.33,-126.8 1008.33,-132.8 1008.33,-138.8 1008.33,-138.8 1008.33,-173.2 1008.33,-173.2 1008.33,-179.2 1002.33,-185.2 996.33,-185.2"/>
+<text xml:space="preserve" text-anchor="middle" x="935" y="-168.6" font-family="Microsoft JhengHei" font-size="14.00">⏳ 日期篩選與週降維聚合</text>
+<text xml:space="preserve" text-anchor="middle" x="935" y="-151.8" font-family="Microsoft JhengHei" font-size="14.00">(單日版顯示 10s 原始時序</text>
+<text xml:space="preserve" text-anchor="middle" x="935" y="-135" font-family="Microsoft JhengHei" font-size="14.00">週檢視版以 2小時動態降維)</text>
+</g>
+<!-- WEB_APP&#45;&gt;ALGO_DIM -->
+<g id="edge10" class="edge">
+<title>WEB_APP-&gt;ALGO_DIM</title>
+<path fill="none" stroke="#475569" d="M694.36,-253.92C738.66,-236.08 803.92,-209.79 855.3,-189.1"/>
+<polygon fill="#475569" stroke="#475569" points="862.62,-186.15 856.54,-192.48 860.04,-187.19 855.2,-189.14 855.2,-189.14 855.2,-189.14 860.04,-187.19 853.85,-185.8 862.62,-186.15"/>
+</g>
+<!-- CHART_WEIGHT -->
+<g id="node17" class="node">
+<title>CHART_WEIGHT</title>
+<path fill="#ede9fe" stroke="#7c3aed" d="M586.5,-54.8C586.5,-54.8 503.5,-54.8 503.5,-54.8 497.5,-54.8 491.5,-48.8 491.5,-42.8 491.5,-42.8 491.5,-30.8 491.5,-30.8 491.5,-24.8 497.5,-18.8 503.5,-18.8 503.5,-18.8 586.5,-18.8 586.5,-18.8 592.5,-18.8 598.5,-24.8 598.5,-30.8 598.5,-30.8 598.5,-42.8 598.5,-42.8 598.5,-48.8 592.5,-54.8 586.5,-54.8"/>
+<text xml:space="preserve" text-anchor="middle" x="545" y="-32.6" font-family="Microsoft JhengHei" font-size="14.00">📉 水杯淨重時序圖</text>
+</g>
+<!-- ALGO_WATER&#45;&gt;CHART_WEIGHT -->
+<g id="edge11" class="edge">
+<title>ALGO_WATER-&gt;CHART_WEIGHT</title>
+<path fill="none" stroke="#475569" d="M545,-126.33C545,-107.4 545,-82.78 545,-64.31"/>
+<polygon fill="#475569" stroke="#475569" points="545,-56.49 548.6,-64.49 545,-59.27 545,-64.49 545,-64.49 545,-64.49 545,-59.27 541.4,-64.49 545,-56.49"/>
+</g>
+<!-- CHART_MIXED -->
+<g id="node15" class="node">
+<title>CHART_MIXED</title>
+<path fill="#ede9fe" stroke="#7c3aed" d="M996.31,-57.6C996.31,-57.6 863.69,-57.6 863.69,-57.6 857.69,-57.6 851.69,-51.6 851.69,-45.6 851.69,-45.6 851.69,-28 851.69,-28 851.69,-22 857.69,-16 863.69,-16 863.69,-16 996.31,-16 996.31,-16 1002.31,-16 1008.31,-22 1008.31,-28 1008.31,-28 1008.31,-45.6 1008.31,-45.6 1008.31,-51.6 1002.31,-57.6 996.31,-57.6"/>
+<text xml:space="preserve" text-anchor="middle" x="930" y="-41" font-family="Microsoft JhengHei" font-size="14.00">📈 環境與行為混合疊圖</text>
+<text xml:space="preserve" text-anchor="middle" x="930" y="-24.2" font-family="Microsoft JhengHei" font-size="14.00">(距離+亮度線+行為背景色塊)</text>
+</g>
+<!-- ALGO_STATE&#45;&gt;CHART_MIXED -->
+<g id="edge12" class="edge">
+<title>ALGO_STATE-&gt;CHART_MIXED</title>
+<path fill="none" stroke="#475569" d="M802.85,-117.92C831.4,-99.93 864.94,-78.8 890.4,-62.75"/>
+<polygon fill="#475569" stroke="#475569" points="896.99,-58.6 892.15,-65.91 894.64,-60.08 890.23,-62.86 890.23,-62.86 890.23,-62.86 894.64,-60.08 888.31,-59.82 896.99,-58.6"/>
+</g>
+<!-- CHART_PIE -->
+<g id="node16" class="node">
+<title>CHART_PIE</title>
+<path fill="#ede9fe" stroke="#7c3aed" d="M803.91,-57.6C803.91,-57.6 680.09,-57.6 680.09,-57.6 674.09,-57.6 668.09,-51.6 668.09,-45.6 668.09,-45.6 668.09,-28 668.09,-28 668.09,-22 674.09,-16 680.09,-16 680.09,-16 803.91,-16 803.91,-16 809.91,-16 815.91,-22 815.91,-28 815.91,-28 815.91,-45.6 815.91,-45.6 815.91,-51.6 809.91,-57.6 803.91,-57.6"/>
+<text xml:space="preserve" text-anchor="middle" x="742" y="-41" font-family="Microsoft JhengHei" font-size="14.00">🍩 工時占比圓餅圖</text>
+<text xml:space="preserve" text-anchor="middle" x="742" y="-24.2" font-family="Microsoft JhengHei" font-size="14.00">(超8小時自動轉紅並跳提示)</text>
+</g>
+<!-- ALGO_STATE&#45;&gt;CHART_PIE -->
+<g id="edge13" class="edge">
+<title>ALGO_STATE-&gt;CHART_PIE</title>
+<path fill="none" stroke="#475569" d="M743.37,-117.92C743.09,-101.48 742.76,-82.42 742.5,-67.01"/>
+<polygon fill="#475569" stroke="#475569" points="742.36,-59.17 746.1,-67.1 742.41,-61.95 742.5,-67.16 742.5,-67.16 742.5,-67.16 742.41,-61.95 738.9,-67.23 742.36,-59.17"/>
+</g>
+<!-- ALGO_DIM&#45;&gt;CHART_MIXED -->
+<g id="edge14" class="edge">
+<title>ALGO_DIM-&gt;CHART_MIXED</title>
+<path fill="none" stroke="#475569" d="M933.78,-126.33C933.01,-108.32 932.02,-85.17 931.25,-67.05"/>
+<polygon fill="#475569" stroke="#475569" points="930.92,-59.31 934.86,-67.15 931.04,-62.09 931.26,-67.3 931.26,-67.3 931.26,-67.3 931.04,-62.09 927.66,-67.46 930.92,-59.31"/>
+<text xml:space="preserve" text-anchor="middle" x="964" y="-83.8" font-family="Microsoft JhengHei" font-size="14.00">動態重繪控制</text>
+</g>
+</g>
+</svg>
