@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -100,6 +100,7 @@
                 }
             });
         };
+
 
         // 核心切換事件
         function onDateOrViewChange() {
@@ -566,6 +567,400 @@
                 type: 'line',
                 data: { labels: [], datasets: [{ label: '水杯淨重 (g)', data: [], borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.05)', fill: true, tension: 0.2 }] },
                 options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 智慧座艙健康看板 v3.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.0/firebase-database-compat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans">
+
+    <header class="bg-indigo-600 text-white shadow-md p-4 mb-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">IoT 工作座艙健康 Dashboard</h1>
+            <div class="flex items-center space-x-4">
+                <div class="text-slate-800 space-x-2 flex items-center bg-white p-2 rounded-lg shadow-sm text-sm">
+                    <label class="font-bold text-slate-600">選擇日期：</label>
+                    <input type="date" id="date-picker" class="border rounded p-1 font-semibold" onchange="onDateOrViewChange()">
+                    <select id="view-mode" class="border rounded p-1 font-semibold" onchange="onDateOrViewChange()">
+                        <option value="day">單日完整時序</option>
+                        <option value="week">本週趨勢 (2小時為計)</option>
+                    </select>
+                </div>
+                <div id="connection-status" class="bg-emerald-500 px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
+                    即時連線中
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pb-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 relative">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">目前最新狀態</div>
+                <div id="current-status" class="text-2xl font-extrabold text-indigo-600 mt-2">分析中...</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">所選區間總喝水量</div>
+                <div id="stat-water" class="text-2xl font-extrabold text-sky-600 mt-2">0 mL</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-sm text-slate-500 font-bold">電腦前工作時長</div>
+                <div id="stat-uptime" class="text-2xl font-extrabold text-emerald-600 mt-2">0 小時 0 分</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="text-sm text-slate-500 font-bold">綜合疲勞健康指數</div>
+                <div id="stat-health" class="text-2xl font-extrabold text-emerald-500 mt-2">良好</div>
+                <div id="mood-emoji" class="absolute right-4 top-4 text-4xl select-none filter drop-shadow-sm transition-transform duration-300 hover:scale-110" title="當前語音辨識情緒">😐</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                <h3 class="text-lg font-bold text-slate-700 mb-4" id="mixed-chart-title">座艙環境與行為疊圖</h3>
+                <div class="h-96"><canvas id="chart-mixed"></canvas></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
+                <h3 class="text-lg font-bold text-slate-700 w-full mb-4 text-left">當日工時占比圖</h3>
+                <div class="h-72 w-72"><canvas id="chart-health"></canvas></div>
+                <div id="health-alert" class="mt-4 text-sm font-semibold text-center text-red-500 hidden">
+                    ⚠️ 警告：今日身心累積疲勞度過高，請立刻遠離電腦休息！
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-lg font-bold text-slate-700 mb-4">當日累積喝水量曲線圖 (mL)</h3>
+                <div class="h-72"><canvas id="chart-water-curve"></canvas></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let chartMixed, chartHealth, chartWaterCurve;
+        let globalSensorData = null;
+        let globalVoiceData = null;
+
+        // 1. FIREBASE 初始化與分流監聽
+        const firebaseConfig = {
+            databaseURL: "https://esp-to-web-72def-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        window.onload = function() {
+            // 鎖定台灣時區的今日日期
+            const today = new Date().toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
+            document.getElementById('date-picker').value = today;
+            
+            initCharts();
+            
+            // 監聽感測器節點 (隨機 ID 物件)
+            db.ref("/sensors/log").on("value", (snapshot) => {
+                globalSensorData = snapshot.val();
+                checkAndTriggerRender();
+            });
+
+            // 監聽語音辨識節點 (時間戳 Key 物件)
+            db.ref("/voice/log").on("value", (snapshot) => {
+                globalVoiceData = snapshot.val();
+                checkAndTriggerRender();
+            });
+        };
+
+        function checkAndTriggerRender() {
+            if (globalSensorData) {
+                onDateOrViewChange();
+            } else {
+                document.getElementById("current-status").innerText = "等待感測器數據...";
+            }
+        }
+
+        function onDateOrViewChange() {
+            const targetDate = document.getElementById('date-picker').value;
+            const viewMode = document.getElementById('view-mode').value;
+            processAndRender(globalSensorData, globalVoiceData, targetDate, viewMode);
+        }
+
+        // ─── 3. 核心大腦：雙節點融合解算與降維抽樣中心 ─────────────────
+        function processAndRender(sensorObjects, voiceObjects, targetDate, viewMode) {
+            // A. 先處理感測器陣列排序
+            let sensorArray = Object.values(sensorObjects || {}).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            let totalWaterSelectedRange = 0;
+            let stableWeightBuffer = [];
+            let lastStableWeight = null;
+            let lastValidDistance = 30;
+            let timelineProcessed = [];
+
+            // 🎯【第一輪：清洗基本狀態並計算全量喝水事件】
+            for (let i = 0; i < sensorArray.length; i++) {
+                let item = sensorArray[i];
+                if (!item.timestamp || item.timestamp.includes("uptime") || isNaN(Date.parse(item.timestamp))) continue;
+
+                let t = new Date(item.timestamp);
+                let itemDateStr = t.toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
+
+                let dist = item.distance_cm;
+                if (dist > 230 || dist <= 0) dist = lastValidDistance;
+                else lastValidDistance = dist;
+
+                // 重量濾波
+                let currentWeight = item.weight_g;
+                let isWaterEvent = false;
+                let weightDiff = 0;
+
+                if (stableWeightBuffer.length === 0) {
+                    stableWeightBuffer.push(currentWeight);
+                } else {
+                    let lastInBuf = stableWeightBuffer[stableWeightBuffer.length - 1];
+                    if (Math.abs(currentWeight - lastInBuf) < 2.0) {
+                        stableWeightBuffer.push(currentWeight);
+                    } else {
+                        stableWeightBuffer = [currentWeight];
+                    }
+                }
+                if (stableWeightBuffer.length >= 3) {
+                    let avgStableWeight = stableWeightBuffer.reduce((a,b)=>a+b, 0) / stableWeightBuffer.length;
+                    if (lastStableWeight !== null) {
+                        weightDiff = lastStableWeight - avgStableWeight;
+                        if (weightDiff > 5.0) isWaterEvent = true;
+                    }
+                    lastStableWeight = avgStableWeight;
+                    stableWeightBuffer = [];
+                }
+
+                // 狀態狀態機
+                let isPresent = dist <= 80;
+                let isScreenOpen = item.light_pct < 80;
+                let isScreenBlack = item.light_pct > 90;
+                
+                let tempStatus = (isPresent && isScreenOpen) ? "上班中" : "休息中";
+
+                timelineProcessed.push({
+                    timestamp: t,
+                    dateStr: itemDateStr,
+                    distance: dist,
+                    light: item.light_pct,
+                    weight: lastStableWeight || currentWeight,
+                    status: tempStatus,
+                    isWaterEvent: isWaterEvent,
+                    weightDiff: weightDiff
+                });
+            }
+
+            // 下班時間連續性修復
+            let restStartIndex = null;
+            for (let i = 0; i < timelineProcessed.length; i++) {
+                if (timelineProcessed[i].status === "休息中") {
+                    if (restStartIndex === null) restStartIndex = i;
+                } else if (timelineProcessed[i].status === "上班中") {
+                    if (restStartIndex !== null) {
+                        if (timelineProcessed[i].timestamp - timelineProcessed[restStartIndex].timestamp >= 3 * 60 * 60 * 1000) {
+                            for (let j = restStartIndex; j < i; j++) timelineProcessed[j].status = "下班";
+                        }
+                        restStartIndex = null;
+                    }
+                }
+            }
+            if (restStartIndex !== null && (timelineProcessed[timelineProcessed.length-1].timestamp - timelineProcessed[restStartIndex].timestamp >= 3 * 60 * 60 * 1000)) {
+                for (let j = restStartIndex; j < timelineProcessed.length; j++) timelineProcessed[j].status = "下班";
+            }
+
+            // 🎯【第二輪：針對特定日期進行 1 分鐘 1 筆的降維提取演算法】
+            let finalTimeline = [];
+            if (viewMode === 'day') {
+                let dayData = timelineProcessed.filter(item => item.dateStr === targetDate);
+                
+                // 1 分鐘桶抽樣邏輯
+                let minutesMap = {};
+                dayData.forEach(item => {
+                    // 將時間格式鎖定到 分鐘 級別
+                    let key = item.timestamp.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                    minutesMap[key] = item; // 永遠覆蓋，保留每一分鐘內最後一筆最新數據
+                });
+                
+                finalTimeline = Object.keys(minutesMap).sort().map(key => minutesMap[key]);
+                document.getElementById('mixed-chart-title').innerText = `座艙環境與行為疊圖 (${targetDate} | 每分鐘數據優化版)`;
+            } else {
+                let endPeriod = new Date(targetDate + "T23:59:59");
+                let startPeriod = new Date(endPeriod.getTime() - 7 * 24 * 60 * 60 * 1000);
+                let weekData = timelineProcessed.filter(item => item.timestamp >= startPeriod && item.timestamp <= endPeriod);
+                finalTimeline = aggregateDataBy2Hours(weekData);
+                document.getElementById('mixed-chart-title').innerText = `座艙環境與行為趨勢圖 (${startPeriod.toLocaleDateString()} ~ ${endPeriod.toLocaleDateString()} 週檢視)`;
+            }
+
+            // 計算當前區間總喝水量
+            let currentAccumulatedWater = 0;
+            finalTimeline.forEach(item => {
+                if (item.isWaterEvent) totalWaterSelectedRange += item.weightDiff;
+                item.accumulatedWater = totalWaterSelectedRange; // 餵給曲線圖
+            });
+            document.getElementById("stat-water").innerText = `${totalWaterSelectedRange.toFixed(0)} mL`;
+
+            // 計算工作秒數
+            let seatSeconds = 0;
+            finalTimeline.forEach(item => {
+                if (item.status === "上班中") {
+                    seatSeconds += (viewMode === 'day') ? 60 : 7200; // 單日版每筆已被壓縮為 1 分鐘
+                }
+            });
+            let hrs = Math.floor(seatSeconds / 3600);
+            let mns = Math.floor((seatSeconds % 3600) / 60);
+            document.getElementById("stat-uptime").innerText = `${hrs} 小時 ${mns} 分`;
+
+            // 更新即時狀態字樣
+            if (timelineProcessed.length > 0) {
+                let latestStatus = timelineProcessed[timelineProcessed.length - 1].status;
+                document.getElementById("current-status").innerText = latestStatus;
+                document.getElementById("current-status").className = latestStatus === "上班中" ? "text-2xl font-extrabold text-emerald-600 mt-2" : "text-2xl font-extrabold text-amber-500 mt-2";
+            }
+
+            // 🎯【第三輪：整合語音情緒節點，運算心理加權健康演算法】
+            let targetVoiceList = Object.values(voiceObjects || {}).filter(v => {
+                if (!v.timestamp || v.timestamp.includes("uptime")) return false;
+                let vDate = new Date(v.timestamp).toLocaleDateString('zh-TW', {timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'}).replace(/\//g, '-');
+                return vDate === targetDate;
+            });
+
+            let happyCount = targetVoiceList.filter(v => v.voice_command === "happy").length;
+            let sotiredCount = targetVoiceList.filter(v => v.voice_command === "sotired").length;
+
+            // 實作加權指標算式
+            let workMinutes = hrs * 60 + mns;
+            let fatigueScore = (workMinutes / 480 * 60) + (sotiredCount * 15) - (happyCount * 10);
+
+            // 更新右上角動態心情標籤
+            const emojiEl = document.getElementById("mood-emoji");
+            if (targetVoiceList.length > 0) {
+                let latestVoice = targetVoiceList[targetVoiceList.length - 1].voice_command;
+                if (latestVoice === "happy") { emojiEl.innerText = "🥰"; emojiEl.title = `開心 (今天累計 ${happyCount} 次)`; }
+                else if (latestVoice === "sotired") { emojiEl.innerText = "😫"; emojiEl.title = `好累 (今天累計 ${sotiredCount} 次)`; }
+            } else {
+                emojiEl.innerText = "😐";
+                emojiEl.title = "今日無語音輸入";
+            }
+
+            // 根據得分刷新健康方塊顏色
+            const healthEl = document.getElementById("stat-health");
+            const alertEl = document.getElementById("health-alert");
+
+            if (fatigueScore >= 75 || hrs >= 8) {
+                healthEl.innerText = `高度疲勞 (${fatigueScore.toFixed(0)}分)`;
+                healthEl.className = "text-2xl font-extrabold text-red-500 mt-2";
+                if(viewMode === 'day') alertEl.classList.remove("hidden");
+            } else if (fatigueScore >= 45) {
+                healthEl.innerText = `輕度疲勞 (${fatigueScore.toFixed(0)}分)`;
+                healthEl.className = "text-2xl font-extrabold text-amber-500 mt-2";
+                alertEl.classList.add("hidden");
+            } else {
+                healthEl.innerText = `身心良好 (${fatigueScore.toFixed(0)}分)`;
+                healthEl.className = "text-2xl font-extrabold text-emerald-500 mt-2";
+                alertEl.classList.add("hidden");
+            }
+
+            renderCharts(finalTimeline, hrs);
+        }
+
+        // 🧮 2小時週聚合輔助器
+        function aggregateDataBy2Hours(dataArr) {
+            if (dataArr.length === 0) return [];
+            let result = [];
+            let intervalMs = 2 * 60 * 60 * 1000;
+            let startTime = Math.floor(dataArr[0].timestamp.getTime() / intervalMs) * intervalMs;
+            let endTime = dataArr[dataArr.length - 1].timestamp.getTime();
+
+            for (let b = startTime; b <= endTime; b += intervalMs) {
+                let bucket = dataArr.filter(item => item.timestamp.getTime() >= b && item.timestamp.getTime() < b + intervalMs);
+                if (bucket.length > 0) {
+                    let avgDist = bucket.reduce((a,b)=>a+b.distance, 0) / bucket.length;
+                    let avgLight = bucket.reduce((a,b)=>a+b.light, 0) / bucket.length;
+                    let hasWater = bucket.some(item => item.isWaterEvent);
+                    let sumDiff = bucket.reduce((a,b)=>a+b.weightDiff, 0);
+                    
+                    let counts = {"上班中":0, "休息中":0, "下班":0};
+                    bucket.forEach(item => counts[item.status]++);
+                    let majorStatus = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+
+                    result.push({
+                        timestamp: new Date(b),
+                        distance: avgDist,
+                        light: avgLight,
+                        status: majorStatus,
+                        isWaterEvent: hasWater,
+                        weightDiff: sumDiff
+                    });
+                }
+            }
+            return result;
+        }
+
+        // ─── 4. CHART.JS 渲染 ─────────────────────────────────────────
+        function renderCharts(timeline, workHours) {
+            const labels = timeline.map(item => item.timestamp.toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}));
+
+            // A. 環境行為圖
+            chartMixed.data.labels = labels;
+            chartMixed.data.datasets[0].data = timeline.map(item => item.distance);
+            chartMixed.data.datasets[1].data = timeline.map(item => item.light);
+            chartMixed.data.datasets[2].data = timeline.map(item => item.status === "上班中" ? 100 : (item.status === "休息中" ? 40 : 10));
+            chartMixed.data.datasets[2].backgroundColor = timeline.map(item => item.status === "上班中" ? 'rgba(16, 185, 129, 0.15)' : (item.status === "休息中" ? 'rgba(245, 158, 11, 0.1)' : 'rgba(148, 163, 184, 0.05)'));
+            chartMixed.update();
+
+            // B. 圓餅工時圖
+            let restHours = Math.max(0, 24 - workHours);
+            chartHealth.data.datasets[0].data = [workHours, restHours];
+            chartHealth.data.datasets[0].backgroundColor = workHours >= 8 ? ['#ef4444', '#cbd5e1'] : ['#10b981', '#cbd5e1'];
+            chartHealth.update();
+
+            // C. 喝水量曲線圖
+            chartWaterCurve.data.labels = labels;
+            chartWaterCurve.data.datasets[0].data = timeline.map(item => item.accumulatedWater);
+            chartWaterCurve.update();
+        }
+
+        // ─── 5. 初始化畫布 ─────────────────────────────────────────────
+        function initCharts() {
+            chartMixed = new Chart(document.getElementById('chart-mixed'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: '距離 (cm)', data: [], borderColor: '#6366f1', borderWidth: 2, yAxisID: 'y', tension: 0.1 },
+                        { label: '光敏電阻值 (LDR)', data: [], borderColor: '#f59e0b', borderWidth: 2, yAxisID: 'y1', tension: 0.1 },
+                        { label: '行為區域 (高:上班 | 中:休息 | 低:下班)', data: [], type: 'bar', backgroundColor: [], barPercentage: 1.0, categoryPercentage: 1.0, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { 
+                        y: { type: 'linear', position: 'left', title: { display: true, text: '公分 (cm)' } }, 
+                        y1: { type: 'linear', position: 'right', max: 120, min: 0, grid: { drawOnChartArea: false } } 
+                    }
+                }
+            });
+
+            chartHealth = new Chart(document.getElementById('chart-health'), {
+                type: 'doughnut',
+                data: { labels: ['工作時數', '休息時數'], datasets: [{ data: [0, 24], backgroundColor: ['#10b981', '#cbd5e1'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            chartWaterCurve = new Chart(document.getElementById('chart-water-curve'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: '本日累積喝水量發展趨勢 (mL)', data: [], borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.3, pointRadius: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: '毫升 (mL)' } } } }
             });
         }
     </script>

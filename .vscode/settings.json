@@ -1,0 +1,12 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "clangd.path": "C:\\Espressif\\tools\\esp-clang\\esp-20.1.1_20250829\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**",
+    "--compile-commands-dir=d:\\esp_idf\\code\\sensor\\build"
+  ],
+  "idf.currentSetup": "D:\\esp_idf\\.espressif\\v6.0\\esp-idf",
+  "idf.portWin": "COM8",
+  "idf.flashType": "UART"
+}
