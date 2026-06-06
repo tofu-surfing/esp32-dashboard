@@ -949,7 +949,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 智慧座艙健康看板 v3.6</title>
+    <title>ESP32 智慧座艙健康看板 v3.7 (終極除錯版)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.0/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.0/firebase-database-compat.min.js"></script>
@@ -991,7 +991,7 @@
                 <div id="stat-uptime" class="text-2xl font-extrabold text-emerald-600 mt-2">0 小時 0 分</div>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
-                <div class="text-sm text-slate-500 font-bold">綜合疲勞健康指數</div>
+                <div class="text-sm text-slate-500 font-bold" id="debug-title" title="等待數據解算...">綜合疲勞健康指數 (懸停看Debug)</div>
                 <div id="stat-health" class="text-2xl font-extrabold text-emerald-500 mt-2">良好</div>
                 <div id="mood-emoji" class="absolute right-4 top-4 text-4xl select-none filter drop-shadow-sm transition-transform duration-300 hover:scale-110" title="當前語音辨識情緒">😐</div>
             </div>
@@ -1067,10 +1067,8 @@
         }
 
         function processAndRender(sensorObjects, voiceObjects, targetDate, viewMode) {
-            // 🛠️ 將網頁選擇的日期 "2026-06-04" 轉成 "20260604" 以匹配你的 Firebase Key
             let targetKeyDate = targetDate.replace(/-/g, ""); 
 
-            // 建立週模式的允許 Key 清單
             let allowedKeyDates = [targetKeyDate];
             if (viewMode === 'week') {
                 let endDate = new Date(`${targetDate}T12:00:00`);
@@ -1087,23 +1085,19 @@
             let timelineProcessed = [];
             let totalWaterSelectedRange = 0; 
 
-            // 🛠️ 核心修正點：不再解析不穩定的欄位，直接抓取 Firebase 的 Object Key 名稱！
             let sensorKeys = Object.keys(sensorObjects || {}).sort();
             
             for (let i = 0; i < sensorKeys.length; i++) {
-                let nodeKey = sensorKeys[i]; // 例如 "20260604_012344"
+                let nodeKey = sensorKeys[i]; 
                 let item = sensorObjects[nodeKey];
 
-                // 提取 Key 前 8 碼作為日期比對
                 let itemDateKey = nodeKey.substring(0, 8); 
-                if (itemDateKey.length !== 8 || isNaN(Number(itemDateKey))) continue; // 略過無效或非時間同步的節點
+                if (itemDateKey.length !== 8 || isNaN(Number(itemDateKey))) continue; 
 
-                // 利用 Key 的時分秒重新精準建立時間物件，徹底隔絕 ISO 字串格式錯亂
                 let hh = Number(nodeKey.substring(9, 11)) || 0;
                 let fractionMin = Number(nodeKey.substring(11, 13)) || 0;
                 let ss = Number(nodeKey.substring(13, 15)) || 0;
                 
-                // 模擬完整時間物件供圖表渲染
                 let year = Number(nodeKey.substring(0, 4));
                 let month = Number(nodeKey.substring(4, 6)) - 1;
                 let day = Number(nodeKey.substring(6, 8));
@@ -1155,7 +1149,7 @@
                 });
             }
 
-            // 下班判定演算法
+            // 下班判定
             let restStartIndex = null;
             for (let i = 0; i < timelineProcessed.length; i++) {
                 if (timelineProcessed[i].status === "休息中") {
@@ -1175,7 +1169,7 @@
                 }
             }
 
-            // 第二輪：依據所選模式抽取分鐘映射
+            // 第二輪
             let finalTimeline = [];
             if (viewMode === 'day') {
                 let dayData = timelineProcessed.filter(item => item.dateKeyStr === targetKeyDate);
@@ -1189,15 +1183,17 @@
                 finalTimeline = aggregateDataBy2Hours(weekData);
             }
 
-            // 刷新卡片資料
+            // 刷新卡片
             document.getElementById("stat-water").innerText = `${totalWaterSelectedRange.toFixed(0)} mL`;
 
+            // 🛠️【核心重構：分數與時長直接就地解算，絕不在外層傳遞變數】
             let seatSeconds = 0;
             finalTimeline.forEach(item => {
                 if (item.status === "上班中") {
                     seatSeconds += (viewMode === 'day') ? 60 : 7200; 
                 }
             });
+            
             let hrs = Math.floor(seatSeconds / 3600);
             let mns = Math.floor((seatSeconds % 3600) / 60);
             document.getElementById("stat-uptime").innerText = `${hrs} 小時 ${mns} 分`;
@@ -1208,7 +1204,7 @@
                 document.getElementById("current-status").className = latestStatus === "上班中" ? "text-2xl font-extrabold text-emerald-600 mt-2" : "text-2xl font-extrabold text-amber-500 mt-2";
             }
 
-            // 🛠️ 語音過濾同樣對齊 Firebase 節點 Key 格式
+            // 語音資料
             let voiceKeys = Object.keys(voiceObjects || {});
             let happyCount = 0;
             let sotiredCount = 0;
@@ -1220,14 +1216,31 @@
                     let cmd = voiceObjects[vKey].voice_command;
                     if (cmd === "happy") happyCount++;
                     if (cmd === "sotired") sotiredCount++;
-                    latestVoiceCmd = cmd; // 快取最後一次觸發
+                    latestVoiceCmd = cmd;
                 }
             });
 
-            // 🎯 計算綜合疲勞健康分數
-            let workMinutes = Number(hrs * 60 + mns) || 0;
-            let baseCalculatedScore = (workMinutes / 480 * 60) + (sotiredCount * 15) - (happyCount * 10);
-            let fatigueScore = Math.max(0, Math.min(100, Math.floor(baseCalculatedScore))) || 0;
+            // 🛠️【暴力型態轉換：強制阻斷 0 與 NaN 的產生】
+            let v_workMinutes = Number(hrs * 60 + mns);
+            let v_sotired = Number(sotiredCount);
+            let v_happy = Number(happyCount);
+
+            // 當場解算基礎分
+            let scorePart1 = (v_workMinutes / 480) * 60;
+            let scorePart2 = v_sotired * 15;
+            let scorePart3 = v_happy * 10;
+            let totalRawScore = scorePart1 + scorePart2 - scorePart3;
+
+            // 終極安全防護：若算出來仍非數位則強迫為基準工作分
+            if (isNaN(totalRawScore)) {
+                totalRawScore = scorePart1 || 0;
+            }
+
+            let fatigueScore = Math.max(0, Math.min(100, Math.floor(totalRawScore)));
+
+            // 🛠️ 塞入除錯訊息到網頁標題屬性 (滑鼠移上去可以看到數值)
+            document.getElementById("debug-title").title = `工作分鐘:${v_workMinutes}, 好累:${v_sotired}, 開心:${v_happy}, 原始分:${totalRawScore.toFixed(1)}`;
+            console.log(`[疲勞解算除錯] 分鐘:${v_workMinutes}, 原始分:${totalRawScore}, 最終分:${fatigueScore}`);
 
             const emojiEl = document.getElementById("mood-emoji");
             if (latestVoiceCmd) {
@@ -1240,6 +1253,8 @@
 
             const healthEl = document.getElementById("stat-health");
             const alertEl = document.getElementById("health-alert");
+            
+            // 🛠️ 直接將計算完的 fatigueScore 塞進 DOM，拒絕任何二次包裝
             if (fatigueScore >= 75 || hrs >= 8) {
                 healthEl.innerText = `高度疲勞 (${fatigueScore}分)`;
                 healthEl.className = "text-2xl font-extrabold text-red-500 mt-2";
